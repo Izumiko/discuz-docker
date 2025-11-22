@@ -12,7 +12,6 @@ services:
       - "443:443/udp"
     environment:
       - SERVER_NAME=:80
-      - TZ=Asia/Shanghai
       - PUID=1000  # 填入你宿主机用户的 UID (终端输入 id -u 查看)
       - PGID=1000  # 填入你宿主机用户的 GID (终端输入 id -g 查看)
     volumes:
