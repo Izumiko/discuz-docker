@@ -1,0 +1,95 @@
+{
+	frankenphp
+	order php_server before file_server
+}
+
+:80 {
+	root * /app/public
+
+	encode zstd gzip
+
+	php_server
+
+	file_server
+
+	# --------------------------------------------------------
+	# Discuz! X 3.5 伪静态规则 (Caddy 2 正确版)
+	# --------------------------------------------------------
+	route {
+		# 1. 门户专题页
+		# 对应: topic-{name}.html
+		@topic path_regexp topic ^/topic-(.+)\.html$
+		rewrite @topic /portal.php?mod=topic&topic={re.topic.1}
+
+		# 2. 门户文章页
+		# 对应: article-{id}-{page}.html
+		@article path_regexp article ^/article-([0-9]+)-([0-9]+)\.html$
+		rewrite @article /portal.php?mod=view&aid={re.article.1}&page={re.article.2}
+
+		# 3. 论坛主题列表页
+		# 对应: forum-{fid}-{page}.html
+		@forum path_regexp forum ^/forum-([0-9]+)-([0-9]+)\.html$
+		rewrite @forum /forum.php?mod=forumdisplay&fid={re.forum.1}&page={re.forum.2}
+
+		# 4. 帖子内容页
+		# 对应: thread-{tid}-{page}-{prevpage}.html
+		@thread path_regexp thread ^/thread-([0-9]+)-([0-9]+)-([0-9]+)\.html$
+		rewrite @thread /forum.php?mod=viewthread&tid={re.thread.1}&extra=page%3D{re.thread.3}&page={re.thread.2}
+
+		# 5. 圈子/群组页
+		# 对应: group-{fid}-{page}.html
+		@group path_regexp group ^/group-([0-9]+)-([0-9]+)\.html$
+		rewrite @group /forum.php?mod=group&fid={re.group.1}&page={re.group.2}
+
+		# 6. 用户个人主页
+		# 对应: space-{user}-{value}.html
+		@space path_regexp space ^/space-(username|uid)-(.+)\.html$
+		rewrite @space /home.php?mod=space&{re.space.1}={re.space.2}
+
+		# 7. 用户日志内容页
+		# 对应: blog-{uid}-{blogid}.html
+		@blog path_regexp blog ^/blog-([0-9]+)-([0-9]+)\.html$
+		rewrite @blog /home.php?mod=space&uid={re.blog.1}&do=blog&id={re.blog.2}
+
+		# 8. 论坛 Archiver 页
+		# 对应: archiver/{action}-{value}.html
+		@archiver path_regexp archiver ^/archiver/([a-z0-9\-]+)\.html$
+		rewrite @archiver /archiver/index.php?{re.archiver.1}
+
+		# 9. 插件页 (这条规则最宽泛，必须放在最后)
+		# 对应: {pluginid}-{module}.html
+		@plugin path_regexp plugin ^/([a-z]+[a-z0-9_]*)-([a-z0-9_\-]+)\.html$
+		rewrite @plugin /plugin.php?id={re.plugin.1}:{re.plugin.2}
+
+		# 10. 兜底规则 (如果上面都没匹配，且文件不存在，转给 index.php)
+		try_files {path} {path}/ /index.php?{query}
+	}
+
+	# --------------------------------------------------------
+	# 1. 禁止访问敏感目录
+	# --------------------------------------------------------
+	@forbidden {
+		# 配置文件目录
+		path /config/*
+
+		# UCenter 数据目录 (存放敏感配置和缓存，通常不需要直接访问)
+		path /uc_client/data/* /uc_server/data/*
+
+		# /data 下的敏感子目录 (仅屏蔽日志、备份等，放行 cache 和 attachment)
+		path /data/restore/* /data/log/* /data/back3/* /data/sysdata/*
+
+		# 源码目录 (防止直接下载插件源码)
+		path /source/*
+	}
+	respond @forbidden 403
+
+	# --------------------------------------------------------
+	# 2. 安全加固：禁止在存储目录执行 PHP (防 Webshell)
+	# --------------------------------------------------------
+	# DiscuzX 可以在 /data, /static, /template 目录中存放静态文件，
+	# 但绝不应该允许执行其中的 .php 文件。
+	@php_in_upload {
+		path /data/*.php /static/*.php /template/*.php /attachment/*.php
+	}
+	respond @php_in_upload 403
+}

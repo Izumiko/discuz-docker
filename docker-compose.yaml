@@ -1,0 +1,53 @@
+services:
+  discuz-web:
+    build:
+      context: .
+      args:
+        - DISCUZ_URL=https://gitee.com/Discuz/DiscuzX/releases/download/v3.5-20250901/Discuz_X3.5_SC_UTF8_20250901.zip
+    container_name: discuz-app
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - SERVER_NAME=:80
+      - TZ=Asia/Shanghai
+      - PUID=1000  # 填入你宿主机用户的 UID (终端输入 id -u 查看)
+      - PGID=1000  # 填入你宿主机用户的 GID (终端输入 id -g 查看)
+    volumes:
+      - ./www:/app/public
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - discuz-db
+
+  # discuz-db:
+  #   image: mysql:8
+  #   container_name: discuz-db
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: rootpassword
+  #     MYSQL_DATABASE: discuz
+  #     MYSQL_USER: discuz
+  #     MYSQL_PASSWORD: discuzpassword
+  #   volumes:
+  #     - db_data:/var/lib/mysql
+
+  discuz-db:
+    image: mariadb:10
+    container_name: discuz-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: discuz
+      MARIADB_USER: discuz
+      MARIADB_PASSWORD: discuzpassword
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:
