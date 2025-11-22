@@ -26,3 +26,11 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: izumiko/discuz:latest,izumiko/discuz:${{ github.ref_name }}
+      - name: Build and push Docker image on Alpine
+        uses: docker/build-push-action@v6
+        with:
+          context: ./
+          file: ./Dockerfile-alpine
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: izumiko/discuz:latest-alpine,izumiko/discuz:${{ github.ref_name }}-alpine

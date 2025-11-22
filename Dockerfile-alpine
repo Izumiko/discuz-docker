@@ -14,27 +14,22 @@ RUN apk add curl unzip && \
     curl -Lo dz.zip ${DISCUZ_URL} && \
     unzip dz.zip -d .
 
-COPY entrypoint.sh /usr/local/bin/
+COPY entrypoint-alpine.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # ==========================================
 # Stage 2: 最终运行阶段 (Final Runtime)
 # ==========================================
-FROM debian:13-slim
+FROM alpine:latest
 
 ARG TARGETARCH
 
 # 1. 安装运行时必需的系统依赖 # 2. 安装 PHP 扩展 # 3. 提权设置
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    gosu \
-    libcap2-bin \
-    && rm -rf /var/lib/apt/lists/* \
+RUN apk add ca-certificates curl su-exec libcap-setcap \
     && if [ "$TARGETARCH" = "arm64" ]; then \
-        FILENAME="frankenphp-linux-aarch64-gnu"; \
+        FILENAME="frankenphp-linux-aarch64"; \
     else \
-        FILENAME="frankenphp-linux-x86_64-gnu"; \
+        FILENAME="frankenphp-linux-x86_64"; \
     fi && \
     curl -L "https://github.com/dunglas/frankenphp/releases/latest/download/${FILENAME}" -o /usr/local/bin/frankenphp \
     && chmod +x /usr/local/bin/frankenphp \
