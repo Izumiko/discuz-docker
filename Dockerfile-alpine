@@ -5,13 +5,13 @@ FROM alpine/git:latest AS downloader
 
 WORKDIR /src
 
-# 定义构建参数，默认为 v3.5-20250901 (这是 DiscuzX 目前的稳定大版本)
+# 定义构建参数，默认为 X5.0_20260320 (这是 DiscuzX 目前的稳定大版本)
 # 你可以在构建时通过 --build-arg DISCUZ_URL=<下载地址> 来指定其他版本的下载地址
-ARG DISCUZ_URL=https://gitee.com/Discuz/DiscuzX/releases/download/v3.5-20250901/Discuz_X3.5_SC_UTF8_20250901.zip
+ARG DISCUZ_URL=https://download.discuz.vip/redirect/?X5.0
 
 # 下载指定版本的 DiscuzX 源码
 RUN apk add curl unzip && \
-    curl -Lo dz.zip ${DISCUZ_URL} && \
+    curl --retry 8 --retry-connrefused -Lo dz.zip ${DISCUZ_URL} && \
     unzip dz.zip -d .
 
 COPY entrypoint-alpine.sh /usr/local/bin/entrypoint.sh
