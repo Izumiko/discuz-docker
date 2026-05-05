@@ -1,9 +1,12 @@
 services:
   discuz-web:
+    # 自己本地构建discuz镜像
     build:
       context: .
       args:
-        - DISCUZ_URL=https://gitee.com/Discuz/DiscuzX/releases/download/v3.5-20250901/Discuz_X3.5_SC_UTF8_20250901.zip
+        - DISCUZ_URL=https://download.discuz.vip/redirect/?X5.0
+    # 或使用预构建镜像
+    # image: izumiko/discuz:latest
     container_name: discuz-app
     restart: always
     ports:
